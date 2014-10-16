@@ -225,10 +225,17 @@ class ExtensionConfiguration(object):
                     self.define_macros.append(('HAVE_CURL_NSS', 1))
                     ssl_lib_detected = True
                     self.libraries.append('ssl3')
-                if not ssl_lib_detected and self.nss_detected():
+                if not ssl_lib_detected and self.detected('NSS'):
                     self.define_macros.append(('HAVE_CURL_NSS', 1))
                     ssl_lib_detected = True
                     self.libraries.append('ssl3')
+                if not ssl_lib_detected and self.detected('OpenSSL'):
+                    self.define_macros.append(('HAVE_CURL_OPENSSL', 1))
+                    ssl_lib_detected = True
+                    self.libraries.append('crypto')
+                if not ssl_lib_detected and self.detected('GnuTLS'):
+                    ssl_lib_detected = True
+                    self.libraries.append('gnutls')
         if not ssl_lib_detected:
             p = subprocess.Popen((CURL_CONFIG, '--features'),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -317,9 +324,9 @@ class ExtensionConfiguration(object):
     else:
         configure = configure_unix
 
-    def nss_detected(self):
+    def detected(self, ssllib):
         curl_version_info = self.get_curl_version_info()
-        return "NSS/" in curl_version_info
+        return "%s/" % ssllib in curl_version_info
 
     def get_curl_version_info(self):
         import ctypes
